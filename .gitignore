@@ -1,4 +1,5 @@
 node_modules
 .env
 .DS_Store
+# client/dist  <-- 注释掉这一行，允许提交 dist 文件夹
 client/node_modules/
