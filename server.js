@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const puppeteer = require('puppeteer');
 const { OpenAI } = require('openai');
+const path = require('path'); // 引入 path 模块
 require('dotenv').config();
 
 const app = express();
@@ -10,6 +11,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// 【新增】托管前端静态文件
+// 生产环境下，client/dist 目录下的文件将被作为静态资源服务
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/dist')));
+}
 
 // 检查 API Key
 if (!process.env.DASHSCOPE_API_KEY) {
@@ -160,10 +167,18 @@ app.post('/api/analyze', async (req, res) => {
   res.json(result);
 });
 
-// 健康检查
-app.get('/', (req, res) => {
-  res.send('Shopify Visual QA API is running 🚀');
-});
+// 【新增】处理所有未匹配的路由，返回前端的 index.html
+// 这样可以支持 React Router (如果有的话)，并且让访问根路径时显示页面
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+  });
+} else {
+  // 本地开发时的提示
+  app.get('/', (req, res) => {
+    res.send('Shopify Visual QA API is running 🚀 (Frontend runs separately in dev)');
+  });
+}
 
 // 启动服务
 app.listen(PORT, () => {
